@@ -15,9 +15,11 @@ These are the instructions:
 
 HINT: For those who dont have a thesis topic yet, you can actually develop a thesis topic out of this assignment
 
-# Guide in case of R installation failures/ code not running
+# Guide in case of Setup Guide for R installation or failures/ code not running
 Incase running R fails, Install R in a folder or directory where there are no spaces in the C drive
-Make sure TEMP and TMP found in environment variables are path in the directory where R.exe is Stored.
+Make sure TEMP and TMP found in environment variables under User Variables are in a path where the directory of R.exe is Stored.
+Also add a Path found under Environment variables and add the C:...\directory\Rx.x.x\bin to the pat
+
 
 # Guide in installing Trial Emulation
 Once you have installed successfully R. Use the R interface/Terminal in VSC to install the TrialEmulation Package.
