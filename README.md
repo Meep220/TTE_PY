@@ -20,6 +20,8 @@ Incase running R fails, Install R in a folder or directory where there are no sp
 Make sure TEMP and TMP found in environment variables under User Variables are in a path where the directory of R.exe is Stored.
 Also add a Path found under Environment variables and add the C:...\directory\Rx.x.x\bin to the pat
 
+# From this point on will be Prompts from AI help/software in translation
+
 
 # Guide in installing Trial Emulation
 Once you have installed successfully R. Use the R interface/Terminal in VSC to install the TrialEmulation Package.
