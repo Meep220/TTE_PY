@@ -1,8 +1,9 @@
 # Set up for ITT and Perprotocol of Target Trial Emulation
 library(TrialEmulation)
 
+#R is a loosely typed Language meaning you can assign variables to anything...
 
-trial_pp <- trial_sequence(estimand = "PP")
+trial_pp <- trial_sequence(estimand = "PP") #This is how Assignments in R are made through Variable <- function or assignment
 
 trial_ITT <- trial_sequence(estimand = "ITT")
 
@@ -39,13 +40,42 @@ trial_ITT <- set_data(
         eligible = "eligible"
     )
 
+# Switch weight model
+
 trial_pp <- set_switch_weight_model(
         trial_pp,
         numerator = ~ age,
         denominator = ~ age + x1 + x3,
         model_fitter = stats_glm_logit(save_path = file.path(trial_pp_dir,"switch_models"))
     )
-trial_pp@switch_weights
+# using @ will display its specific function or property
+trial_pp@switch_weights #displays the function above and what parameters it is using for weights
+
+#Censor Weight model
+
+trial_pp <- set_censor_weight_model(
+    trial_pp,
+    censor_event = "censored",
+    numerator = ~ x2,
+    denominator = ~ x2 + x1,
+    pool_models = "none",
+    model_fitter = stats_glm_logit(save_path = file.path(trial_pp_dir,"switch_models"))
+    
+)
+trial_pp@censor_weights
+
+trial_ITT <- set_censor_weight_model(
+    trial_ITT,
+    censor_event = "censored",
+    numerator = ~ x2,
+    denominator = ~ x2 + x1,
+    pool_models = "numerator",
+    model_fitter = stats_glm_logit(save_path = file.path(trial_pp_dir,"switch_models"))
+)
+
+trial_ITT@censor_weights
+
+
 
 
 
