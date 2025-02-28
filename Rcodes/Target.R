@@ -62,7 +62,7 @@ trial_pp <- set_censor_weight_model(
     model_fitter = stats_glm_logit(save_path = file.path(trial_pp_dir,"switch_models"))
     
 )
-trial_pp@censor_weights
+
 
 trial_ITT <- set_censor_weight_model(
     trial_ITT,
@@ -73,11 +73,59 @@ trial_ITT <- set_censor_weight_model(
     model_fitter = stats_glm_logit(save_path = file.path(trial_pp_dir,"switch_models"))
 )
 
-trial_ITT@censor_weights
+
+
+# Weight calculation
+
+trial_pp <- calculate_weights(trial_pp)
+trial_ITT <- calculate_weights(trial_ITT)
+# This shows the weight models in the trial, the parameters and everything.
+show_weight_models(trial_ITT)
+
+#Specifying Outcome Models
+
+trial_pp <- set_outcome_model(trial_pp)
+trial_ITT <- set_outcome_model(trial_ITT, adjustment_terms = ~x2)
+
+trial_pp <- set_expansion_options(
+  trial_pp,
+  output = save_to_datatable(),
+  chunk_size = 500 # the number of patients to include in each expansion iteration
+)
+
+trial_ITT <- set_expansion_options(
+  trial_ITT,
+  output = save_to_datatable(),
+  chunk_size = 500
+)
+
+trial_pp  <- expand_trials(trial_pp)
+trial_ITT <- expand_trials(trial_ITT)
 
 
 
+trial_ITT <- load_expanded_data(trial_ITT, seed = 1234, p_control = 0.5)
 
+trial_ITT <- fit_msm(
+  trial_ITT,
+  weight_cols    = c("weight", "sample_weight"),
+  modify_weights = function(w) { # winsorization of extreme weights
+    q99 <- quantile(w, probs = 0.99)
+    pmin(w, q99)
+  }
+)
 
+trial_ITT
 
+preds <- predict(
+  trial_ITT,
+  newdata       = outcome_data(trial_ITT)[trial_period == 1, ],
+  predict_times = 0:10,
+  type          = "survival",
+)
+
+plot(preds$difference$followup_time, preds$difference$survival_diff,
+  type = "l", xlab = "Follow up", ylab = "Survival difference")
+lines(preds$difference$followup_time, preds$difference$`2.5%`, type = "l", col = "red", lty = 2)
+lines(preds$difference$followup_time, preds$difference$`97.5%`, type = "l", col = "red", lty = 2)
 
