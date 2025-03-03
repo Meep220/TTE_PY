@@ -63,6 +63,7 @@ trial_pp <- set_censor_weight_model(
     
 )
 
+#Censor Weight Model for ITT
 
 trial_ITT <- set_censor_weight_model(
     trial_ITT,
@@ -73,9 +74,7 @@ trial_ITT <- set_censor_weight_model(
     model_fitter = stats_glm_logit(save_path = file.path(trial_pp_dir,"switch_models"))
 )
 
-
-
-# Weight calculation
+# Weight calculation for PP and ITT
 
 trial_pp <- calculate_weights(trial_pp)
 trial_ITT <- calculate_weights(trial_ITT)
@@ -86,6 +85,8 @@ show_weight_models(trial_ITT)
 
 trial_pp <- set_outcome_model(trial_pp)
 trial_ITT <- set_outcome_model(trial_ITT, adjustment_terms = ~x2)
+
+#setting expansion options via chunk size and output
 
 trial_pp <- set_expansion_options(
   trial_pp,
@@ -99,11 +100,13 @@ trial_ITT <- set_expansion_options(
   chunk_size = 500
 )
 
+#expands trials of the following via expansion options
+
 trial_pp  <- expand_trials(trial_pp)
 trial_ITT <- expand_trials(trial_ITT)
 
 
-
+# loads an expanded data with seed and p control
 trial_ITT <- load_expanded_data(trial_ITT, seed = 1234, p_control = 0.5)
 
 trial_ITT <- fit_msm(
