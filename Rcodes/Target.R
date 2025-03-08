@@ -2,7 +2,7 @@
 library(TrialEmulation)
 
 #R is a loosely typed Language meaning you can assign variables to anything...
-
+#-------------------- Step 1
 trial_pp <- trial_sequence(estimand = "PP") #This is how Assignments in R are made through Variable <- function or assignment
 
 trial_ITT <- trial_sequence(estimand = "ITT")
@@ -13,7 +13,7 @@ dir.create(trial_pp_dir)
 
 trial_ITT_dir <- file.path(tempdir(),"trial_ITT")
 dir.create(trial_ITT_dir)
-
+#--------------------- Step 2
 #Data Setup
 data("data_censored")
 head(data_censored)
@@ -39,6 +39,8 @@ trial_ITT <- set_data(
         outcome = "outcome",
         eligible = "eligible"
     )
+
+#--------------------------- Step 3
 
 # Switch weight model
 
@@ -74,6 +76,8 @@ trial_ITT <- set_censor_weight_model(
     model_fitter = stats_glm_logit(save_path = file.path(trial_pp_dir,"switch_models"))
 )
 
+#--------------------------- Step 4
+
 # Weight calculation for PP and ITT
 
 trial_pp <- calculate_weights(trial_pp)
@@ -81,12 +85,17 @@ trial_ITT <- calculate_weights(trial_ITT)
 # This shows the weight models in the trial, the parameters and everything.
 show_weight_models(trial_ITT)
 
+# ------------------------- Step 5
+
+
 #Specifying Outcome Models
 
 trial_pp <- set_outcome_model(trial_pp)
 trial_ITT <- set_outcome_model(trial_ITT, adjustment_terms = ~x2)
 
 #setting expansion options via chunk size and output
+
+# ----------------------------------- Step 6
 
 trial_pp <- set_expansion_options(
   trial_pp,
@@ -105,9 +114,12 @@ trial_ITT <- set_expansion_options(
 trial_pp  <- expand_trials(trial_pp)
 trial_ITT <- expand_trials(trial_ITT)
 
+# ----------------------------------- Step 7
 
 # loads an expanded data with seed and p control
 trial_ITT <- load_expanded_data(trial_ITT, seed = 1234, p_control = 0.5)
+
+# ----------------------------------- Step 8
 
 trial_ITT <- fit_msm(
   trial_ITT,
@@ -117,6 +129,8 @@ trial_ITT <- fit_msm(
     pmin(w, q99)
   }
 )
+
+# ----------------------------------- Step 9
 
 trial_ITT
 
