@@ -6,8 +6,16 @@ from sklearn.linear_model import LogisticRegression
 from pathlib import Path
 
 # Define equivalent functions for TrialEmulation methods
+
+#def set_data(df, id_col, period_col, treatment_col, outcome_col, eligible_col):
+#    return df[[id_col, period_col, treatment_col, outcome_col, eligible_col]].copy()#\
+
 def set_data(df, id_col, period_col, treatment_col, outcome_col, eligible_col):
-    return df[[id_col, period_col, treatment_col, outcome_col, eligible_col]].copy()
+    return df.copy()
+
+#def set_data(df, id_col, period_col, treatment_col, outcome_col, eligible_col):
+#    cols_to_keep = [id_col, period_col, treatment_col, outcome_col, eligible_col, "age", "x1", "x3", "x2", "censored"]
+#    return df[cols_to_keep].copy()
 
 def set_switch_weight_model(df, numerator_cols, denominator_cols):
     logit_model = LogisticRegression()
