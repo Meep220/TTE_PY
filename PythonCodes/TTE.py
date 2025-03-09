@@ -3,69 +3,86 @@ import numpy as np
 import matplotlib.pyplot as plt
 from lifelines import KaplanMeierFitter
 from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import StandardScaler
 from pathlib import Path
 
-# Define equivalent functions for TrialEmulation methods
-
-#def set_data(df, id_col, period_col, treatment_col, outcome_col, eligible_col):
-#    return df[[id_col, period_col, treatment_col, outcome_col, eligible_col]].copy()#\
-
+# Function to prepare data
 def set_data(df, id_col, period_col, treatment_col, outcome_col, eligible_col):
     return df.copy()
 
-#def set_data(df, id_col, period_col, treatment_col, outcome_col, eligible_col):
-#    cols_to_keep = [id_col, period_col, treatment_col, outcome_col, eligible_col, "age", "x1", "x3", "x2", "censored"]
-#    return df[cols_to_keep].copy()
-
+# Function to train logistic regression model for switch weight
 def set_switch_weight_model(df, numerator_cols, denominator_cols):
-    logit_model = LogisticRegression()
     X = df[denominator_cols]
     y = df[numerator_cols[0]]  # Assuming single column for numerator
-    logit_model.fit(X, y)
-    df["switch_weight"] = logit_model.predict_proba(X)[:, 1]
+    
+    # Handle missing or non-numeric values
+    X = X.fillna(0)
+    y = y.fillna(0)
+    
+    # Scale data for better convergence
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+    
+    logit_model = LogisticRegression(max_iter=500)  # Increase max_iter
+    logit_model.fit(X_scaled, y)
+    
+    df["switch_weight"] = logit_model.predict_proba(X_scaled)[:, 1]
     return df
 
+# Function to train logistic regression model for censor weight
 def set_censor_weight_model(df, censor_event_col, numerator_cols, denominator_cols):
-    logit_model = LogisticRegression()
     X = df[denominator_cols]
     y = df[censor_event_col]
-    logit_model.fit(X, y)
-    df["censor_weight"] = logit_model.predict_proba(X)[:, 1]
+    
+    # Handle missing values
+    X = X.fillna(0)
+    y = y.fillna(0)
+    
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+    
+    logit_model = LogisticRegression(max_iter=500)  # Increase max_iter
+    logit_model.fit(X_scaled, y)
+    
+    df["censor_weight"] = logit_model.predict_proba(X_scaled)[:, 1]
     return df
 
+# Function to calculate final weights
 def calculate_weights(df):
+    if "switch_weight" not in df.columns:
+        df["switch_weight"] = 1  # Default weight if missing
+    if "censor_weight" not in df.columns:
+        df["censor_weight"] = 1  # Default weight if missing
+        
     df["final_weight"] = df["switch_weight"] * df["censor_weight"]
     return df
 
-def set_outcome_model(df, adjustment_terms=[]):
+# Function to fit Kaplan-Meier survival model
+def set_outcome_model(df):
     kmf = KaplanMeierFitter()
     kmf.fit(durations=df["period"], event_observed=df["outcome"])
     return kmf
 
+# Function to predict survival
 def predict_survival(kmf, time_points):
     return np.exp(-0.1 * time_points)  # Placeholder survival curve
 
-# Set up temporary directories
+# Set up directories
 trial_pp_dir = Path("./trial_pp")
 trial_ITT_dir = Path("./trial_ITT")
 trial_pp_dir.mkdir(exist_ok=True)
 trial_ITT_dir.mkdir(exist_ok=True)
 
-# Load Data (Placeholder - Replace with actual data loading method)
-data_censored = pd.DataFrame({
-    "id": [1, 2, 3, 4, 5],
-    "period": [1, 1, 1, 2, 2],
-    "treatment": [0, 1, 0, 1, 0],
-    "outcome": [0, 1, 0, 1, 0],
-    "eligible": [1, 1, 1, 1, 0],
-    "age": [30, 40, 50, 60, 70],
-    "x1": [0.5, 0.6, 0.7, 0.8, 0.9],
-    "x2": [1, 0, 1, 0, 1],
-    "x3": [3, 2, 1, 3, 2],
-    "censored": [0, 1, 0, 1, 0]
-})
+# Load data
+data_censored = pd.read_csv("./csv-files/data_censored.csv")
 
-# Set Data for PP and ITT Trials
+# Ensure all necessary columns exist
+expected_columns = {"id", "period", "treatment", "outcome", "eligible", "age", "x1", "x2", "x3", "censored"}
+missing_columns = expected_columns - set(data_censored.columns)
+if missing_columns:
+    raise ValueError(f"Missing columns in dataset: {missing_columns}")
+
+# Set Data
 trial_pp = set_data(data_censored, "id", "period", "treatment", "outcome", "eligible")
 trial_ITT = set_data(data_censored, "id", "period", "treatment", "outcome", "eligible")
 
@@ -82,7 +99,7 @@ trial_ITT = calculate_weights(trial_ITT)
 
 # Fit Outcome Model
 kmf_pp = set_outcome_model(trial_pp)
-kmf_ITT = set_outcome_model(trial_ITT, adjustment_terms=["x2"])
+kmf_ITT = set_outcome_model(trial_ITT)
 
 # Predict Survival
 time_points = np.arange(0, 11)
